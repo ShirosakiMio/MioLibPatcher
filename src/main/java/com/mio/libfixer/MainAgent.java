@@ -9,13 +9,11 @@ import java.lang.instrument.UnmodifiableClassException;
 public class MainAgent {
     public static void premain(String agentArgs, Instrumentation inst) {
         System.out.println("Mio LibFixer is running!");
-        inst.addTransformer(new TTSTransformer(), true);
-        inst.addTransformer(new LibraryTransformer(), true);
+        addTransformer(inst);
     }
 
     public static void agentmain(String agentArgs, Instrumentation inst) throws UnmodifiableClassException {
-        inst.addTransformer(new TTSTransformer(), true);
-        inst.addTransformer(new LibraryTransformer(), true);
+        addTransformer(inst);
         Class<?>[] classes = inst.getAllLoadedClasses();
         for (Class<?> aClass : classes) {
             if (aClass.getName().equals("com.mojang.text2speech.Narrator") || aClass.getName().equals("org.lwjgl.system.Library")) {
@@ -24,6 +22,11 @@ public class MainAgent {
                 break;
             }
         }
+    }
+
+    private static void addTransformer(Instrumentation inst) {
+        inst.addTransformer(new TTSTransformer(), true);
+        inst.addTransformer(new LibraryTransformer(), true);
     }
 
 }
