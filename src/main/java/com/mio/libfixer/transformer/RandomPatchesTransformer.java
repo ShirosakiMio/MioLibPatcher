@@ -5,7 +5,7 @@ import javassist.CtMethod;
 
 import java.io.ByteArrayInputStream;
 
-public class RandomPatchedTransformer implements BaseTransformer {
+public class RandomPatchesTransformer implements BaseTransformer {
 
     @Override
     public String getTargetClassName() {
@@ -16,7 +16,7 @@ public class RandomPatchedTransformer implements BaseTransformer {
     public byte[] transform(byte[] buffer) {
         try {
             CtClass clazz = pool.makeClass(new ByteArrayInputStream(buffer));
-            CtMethod method = clazz.getDeclaredMethod("setWindowIcon");
+            CtMethod method = clazz.getDeclaredMethod("setWindowIcon",new CtClass[]{});
             method.setBody("{}");
             byte[] bytes = clazz.toBytecode();
             clazz.detach();

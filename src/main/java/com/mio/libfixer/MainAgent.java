@@ -24,7 +24,7 @@ public class MainAgent {
         transformers.add(new TTSTransformer());
         transformers.add(new LibraryTransformer());
         transformers.add(new SystemInfoTransformer());
-        transformers.add(new RandomPatchedTransformer());
+        transformers.add(new RandomPatchesTransformer());
         transformers.forEach(baseTransformer -> {
             inst.addTransformer(baseTransformer, true);
             if (isAgentmain) {
