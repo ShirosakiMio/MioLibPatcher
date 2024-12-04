@@ -13,6 +13,7 @@ dependencies {
 }
 
 jar {
+    exclude 'Main.class'
     manifest {
         attributes 'Manifest-Version': '1.0'
         attributes 'Premain-Class':'com.mio.libfixer.MainAgent'

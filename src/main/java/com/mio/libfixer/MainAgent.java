@@ -1,6 +1,7 @@
 package com.mio.libfixer;
 
 import com.mio.libfixer.transformer.LibraryTransformer;
+import com.mio.libfixer.transformer.SystemInfoTransformer;
 import com.mio.libfixer.transformer.TTSTransformer;
 
 import java.lang.instrument.Instrumentation;
@@ -16,7 +17,7 @@ public class MainAgent {
         addTransformer(inst);
         Class<?>[] classes = inst.getAllLoadedClasses();
         for (Class<?> aClass : classes) {
-            if (aClass.getName().equals("com.mojang.text2speech.Narrator") || aClass.getName().equals("org.lwjgl.system.Library")) {
+            if (aClass.getName().equals("com.mojang.text2speech.Narrator") || aClass.getName().equals("org.lwjgl.system.Library") || aClass.getName().equals("net.vulkanmod.vulkan.SystemInfo")) {
                 System.out.println("transform:" + aClass.getName());
                 inst.retransformClasses(aClass);
                 break;
@@ -27,6 +28,7 @@ public class MainAgent {
     private static void addTransformer(Instrumentation inst) {
         inst.addTransformer(new TTSTransformer(), true);
         inst.addTransformer(new LibraryTransformer(), true);
+        inst.addTransformer(new SystemInfoTransformer(), true);
     }
 
 }
