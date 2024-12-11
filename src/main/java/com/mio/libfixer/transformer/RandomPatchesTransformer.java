@@ -16,7 +16,7 @@ public class RandomPatchesTransformer implements BaseTransformer {
     public byte[] transform(byte[] buffer) {
         try {
             CtClass clazz = pool.makeClass(new ByteArrayInputStream(buffer));
-            CtMethod method = clazz.getDeclaredMethod("setWindowIcon",new CtClass[]{});
+            CtMethod method = clazz.getDeclaredMethod("setWindowIcon", new CtClass[]{});
             method.setBody("{}");
             byte[] bytes = clazz.toBytecode();
             clazz.detach();
