@@ -1,15 +1,16 @@
-package com.mio.libfixer.transformer;
+package com.mio.libpatcher.transformer.oshi;
 
+import com.mio.libpatcher.transformer.BaseTransformer;
 import javassist.CtClass;
-import javassist.CtConstructor;
+import javassist.CtMethod;
 import javassist.NotFoundException;
 
 import java.io.ByteArrayInputStream;
 
-public class SystemInfoTransformer implements BaseTransformer {
+public class ProcessorIdentifierTransformer implements BaseTransformer {
     @Override
     public String getTargetClassName() {
-        return "net.vulkanmod.vulkan.SystemInfo";
+        return "oshi.hardware.CentralProcessor$ProcessorIdentifier";
     }
 
     @Override
@@ -17,12 +18,12 @@ public class SystemInfoTransformer implements BaseTransformer {
         try {
             CtClass clazz;
             try {
-                clazz = pool.get("net.vulkanmod.vulkan.SystemInfo");
+                clazz = pool.get(getTargetClassName());
             } catch (NotFoundException e) {
                 clazz = pool.makeClass(new ByteArrayInputStream(buffer));
             }
-            CtConstructor constructor = clazz.getClassInitializer();
-            constructor.setBody("{cpuInfo = \"\";}");
+            CtMethod method = clazz.getDeclaredMethod("getName");
+            method.setBody("{return System.getProperty(\"cpu.name\",\"\");}");
             byte[] bytes = clazz.toBytecode();
             clazz.detach();
             return bytes;

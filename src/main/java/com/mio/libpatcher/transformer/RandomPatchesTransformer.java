@@ -1,19 +1,22 @@
-package com.mio.libfixer.transformer;
+package com.mio.libpatcher.transformer;
 
 import javassist.CtClass;
 import javassist.CtMethod;
 
-public class LibraryTransformer implements BaseTransformer {
+import java.io.ByteArrayInputStream;
+
+public class RandomPatchesTransformer implements BaseTransformer {
+
     @Override
     public String getTargetClassName() {
-        return "org.lwjgl.system.Library";
+        return "com.therandomlabs.randompatches.client.WindowIconHandler";
     }
 
     @Override
     public byte[] transform(byte[] buffer) {
         try {
-            CtClass clazz = pool.get("org.lwjgl.system.Library");
-            CtMethod method = clazz.getDeclaredMethod("checkHash");
+            CtClass clazz = pool.makeClass(new ByteArrayInputStream(buffer));
+            CtMethod method = clazz.getDeclaredMethod("setWindowIcon", new CtClass[]{});
             method.setBody("{}");
             byte[] bytes = clazz.toBytecode();
             clazz.detach();

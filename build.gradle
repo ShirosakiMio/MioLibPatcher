@@ -16,8 +16,8 @@ jar {
     exclude 'Main.class'
     manifest {
         attributes 'Manifest-Version': '1.0'
-        attributes 'Premain-Class':'com.mio.libfixer.MainAgent'
-        attributes 'Agent-Class':'com.mio.libfixer.MainAgent'
+        attributes 'Premain-Class':'com.mio.libpatcher.MainAgent'
+        attributes 'Agent-Class':'com.mio.libpatcher.MainAgent'
         attributes 'Can-Redefine-Classes': true
         attributes 'Can-Retransform-Classes': true
     }
