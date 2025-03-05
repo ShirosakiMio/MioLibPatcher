@@ -30,10 +30,16 @@ public class MainAgent {
         transformers.add(new RandomPatchesTransformer());
         transformers.add(new ProcessorIdentifierTransformer());
         transformers.add(new CentralProcessor());
+        transformers.add(new SodiumLikeModTransformer());
         transformers.forEach(baseTransformer -> {
             inst.addTransformer(baseTransformer, true);
             if (isAgentmain) {
-                classList.add(baseTransformer.getTargetClassName());
+                String className = baseTransformer.getTargetClassName();
+                if (!className.isEmpty()) {
+                    classList.add(className);
+                } else {
+                    classList.addAll(baseTransformer.getTargetClassNames());
+                }
             }
         });
         if (isAgentmain) {
