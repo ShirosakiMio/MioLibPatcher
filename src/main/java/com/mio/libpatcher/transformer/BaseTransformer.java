@@ -16,20 +16,26 @@ public interface BaseTransformer extends ClassFileTransformer {
         return null;
     }
 
-    byte[] transform(byte[] buffer);
+    byte[] transform(byte[] buffer) throws Throwable;
 
     @Override
     default byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] classfileBuffer) throws IllegalClassFormatException {
-        if (getTargetClassName().replace(".", "/").equals(className)) {
-            return transform(classfileBuffer);
-        }
-        if (getTargetClassNames() != null) {
-            for (String name : getTargetClassNames()) {
-                if (name.replace(".", "/").equals(className)) {
-                    return transform(classfileBuffer);
+        try {
+            if (getTargetClassName().replace(".", "/").equals(className)) {
+                return transform(classfileBuffer);
+            }
+            if (getTargetClassNames() != null) {
+                for (String name : getTargetClassNames()) {
+                    if (name.replace(".", "/").equals(className)) {
+                        return transform(classfileBuffer);
+                    }
                 }
             }
+        } catch (Throwable e) {
+            e.printStackTrace();
         }
         return classfileBuffer;
     }
+
+//    default byte[] get
 }

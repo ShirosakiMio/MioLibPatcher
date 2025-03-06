@@ -13,22 +13,17 @@ public class SystemInfoTransformer implements BaseTransformer {
     }
 
     @Override
-    public byte[] transform(byte[] buffer) {
+    public byte[] transform(byte[] buffer) throws Throwable {
+        CtClass clazz;
         try {
-            CtClass clazz;
-            try {
-                clazz = pool.get("net.vulkanmod.vulkan.SystemInfo");
-            } catch (NotFoundException e) {
-                clazz = pool.makeClass(new ByteArrayInputStream(buffer));
-            }
-            CtConstructor constructor = clazz.getClassInitializer();
-            constructor.setBody("{cpuInfo = \"\";}");
-            byte[] bytes = clazz.toBytecode();
-            clazz.detach();
-            return bytes;
-        } catch (Throwable e) {
-            e.printStackTrace();
+            clazz = pool.get("net.vulkanmod.vulkan.SystemInfo");
+        } catch (NotFoundException e) {
+            clazz = pool.makeClass(new ByteArrayInputStream(buffer));
         }
-        return buffer;
+        CtConstructor constructor = clazz.getClassInitializer();
+        constructor.setBody("{cpuInfo = System.getProperty(\"cpu.name\",\"\");}");
+        byte[] bytes = clazz.toBytecode();
+        clazz.detach();
+        return bytes;
     }
 }

@@ -14,22 +14,17 @@ public class ProcessorIdentifierTransformer implements BaseTransformer {
     }
 
     @Override
-    public byte[] transform(byte[] buffer) {
+    public byte[] transform(byte[] buffer) throws Throwable {
+        CtClass clazz;
         try {
-            CtClass clazz;
-            try {
-                clazz = pool.get(getTargetClassName());
-            } catch (NotFoundException e) {
-                clazz = pool.makeClass(new ByteArrayInputStream(buffer));
-            }
-            CtMethod method = clazz.getDeclaredMethod("getName");
-            method.setBody("{return System.getProperty(\"cpu.name\",\"\");}");
-            byte[] bytes = clazz.toBytecode();
-            clazz.detach();
-            return bytes;
-        } catch (Throwable e) {
-            e.printStackTrace();
+            clazz = pool.get(getTargetClassName());
+        } catch (NotFoundException e) {
+            clazz = pool.makeClass(new ByteArrayInputStream(buffer));
         }
-        return buffer;
+        CtMethod method = clazz.getDeclaredMethod("getName");
+        method.setBody("{return System.getProperty(\"cpu.name\",\"\");}");
+        byte[] bytes = clazz.toBytecode();
+        clazz.detach();
+        return bytes;
     }
 }

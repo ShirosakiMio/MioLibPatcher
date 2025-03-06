@@ -11,21 +11,16 @@ public class TTSTransformer implements BaseTransformer {
     }
 
     @Override
-    public byte[] transform(byte[] buffer) {
+    public byte[] transform(byte[] buffer) throws Throwable {
+        CtClass clazz = pool.get("com.mojang.text2speech.Narrator");
+        CtMethod method = clazz.getDeclaredMethod("getNarrator");
         try {
-            CtClass clazz = pool.get("com.mojang.text2speech.Narrator");
-            CtMethod method = clazz.getDeclaredMethod("getNarrator");
-            try {
-                method.setBody("{ return new com.mojang.text2speech.NarratorDummy(); }");
-            } catch (CannotCompileException e) {
-                method.setBody("{ return EMPTY; }");
-            }
-            byte[] bytes = clazz.toBytecode();
-            clazz.detach();
-            return bytes;
-        } catch (Throwable e) {
-            e.printStackTrace();
+            method.setBody("{ return new com.mojang.text2speech.NarratorDummy(); }");
+        } catch (CannotCompileException e) {
+            method.setBody("{ return EMPTY; }");
         }
-        return buffer;
+        byte[] bytes = clazz.toBytecode();
+        clazz.detach();
+        return bytes;
     }
 }

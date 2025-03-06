@@ -23,18 +23,13 @@ public class SQLTransformer implements BaseTransformer {
     }
 
     @Override
-    public byte[] transform(byte[] buffer) {
-        try {
-            CtClass clazz;
-            clazz = pool.makeClass(new ByteArrayInputStream(buffer));
-            CtMethod method = clazz.getDeclaredMethod("isAndroid");
-            method.setBody("{return true;}");
-            byte[] bytes = clazz.toBytecode();
-            clazz.detach();
-            return bytes;
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-        return buffer;
+    public byte[] transform(byte[] buffer) throws Throwable {
+        CtClass clazz;
+        clazz = pool.makeClass(new ByteArrayInputStream(buffer));
+        CtMethod method = clazz.getDeclaredMethod("isAndroid");
+        method.setBody("{return true;}");
+        byte[] bytes = clazz.toBytecode();
+        clazz.detach();
+        return bytes;
     }
 }
