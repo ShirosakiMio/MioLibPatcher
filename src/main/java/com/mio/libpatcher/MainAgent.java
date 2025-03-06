@@ -31,6 +31,7 @@ public class MainAgent {
         transformers.add(new ProcessorIdentifierTransformer());
         transformers.add(new CentralProcessor());
         transformers.add(new SodiumLikeModTransformer());
+        transformers.add(new SQLTransformer());
         transformers.forEach(baseTransformer -> {
             inst.addTransformer(baseTransformer, true);
             if (isAgentmain) {
