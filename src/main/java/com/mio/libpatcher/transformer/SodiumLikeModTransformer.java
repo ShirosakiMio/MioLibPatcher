@@ -19,6 +19,7 @@ public class SodiumLikeModTransformer implements BaseTransformer {
         nameList.add("net.caffeinemc.mods.sodium.client.compatibility.checks.PostLaunchChecks");
         nameList.add("me.jellysquid.mods.sodium.client.compatibility.checks.PostLaunchChecks");
         nameList.add("org.embeddedt.embeddium.impl.compatibility.checks.LateDriverScanner");
+        nameList.add("me.jellysquid.mods.sodium.client.compatibility.checks.LateDriverScanner");
         return nameList;
     }
 
