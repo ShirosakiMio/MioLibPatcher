@@ -32,6 +32,7 @@ public class MainAgent {
         transformers.add(new CentralProcessor());
         transformers.add(new SodiumLikeModTransformer());
         transformers.add(new SQLTransformer());
+        transformers.add(new FabricLoaderTransformer());
         transformers.forEach(baseTransformer -> {
             inst.addTransformer(baseTransformer, true);
             if (isAgentmain) {
