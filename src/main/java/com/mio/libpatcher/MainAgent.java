@@ -33,6 +33,7 @@ public class MainAgent {
         transformers.add(new SodiumLikeModTransformer());
         transformers.add(new SQLTransformer());
         transformers.add(new FabricLoaderTransformer());
+        transformers.add(new ForgeModDirTransformer());
         transformers.forEach(baseTransformer -> {
             inst.addTransformer(baseTransformer, true);
             if (isAgentmain) {
