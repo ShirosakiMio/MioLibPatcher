@@ -18,6 +18,7 @@ public class SQLTransformer implements BaseTransformer {
     public List<String> getTargetClassNames() {
         List<String> list = new ArrayList<>();
         list.add("dh_sqlite.util.OSInfo");
+        list.add("org.rfresh.sqlite.util.OSInfo");
         list.add("org.sqlite.util.OSInfo");
         return list;
     }
