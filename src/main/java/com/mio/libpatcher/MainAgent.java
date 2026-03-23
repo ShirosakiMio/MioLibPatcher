@@ -3,6 +3,7 @@ package com.mio.libpatcher;
 import com.mio.libpatcher.transformer.*;
 import com.mio.libpatcher.transformer.oshi.CentralProcessor;
 import com.mio.libpatcher.transformer.oshi.ProcessorIdentifierTransformer;
+import com.mio.libpatcher.util.LogUtil;
 
 import java.lang.instrument.Instrumentation;
 import java.lang.instrument.UnmodifiableClassException;
@@ -10,11 +11,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainAgent {
-    public static String TAG = "[MioPatcher]";
+
     private static final List<String> classList = new ArrayList<>();
 
     public static void premain(String agentArgs, Instrumentation inst) {
-        System.out.println(TAG + ": MioPatcher is running!");
+        LogUtil.info("MioPatcher is running!");
         addTransformer(inst, false);
     }
 
@@ -34,6 +35,7 @@ public class MainAgent {
         transformers.add(new SQLTransformer());
         transformers.add(new FabricLoaderTransformer());
         transformers.add(new ForgeModDirTransformer());
+        transformers.add(new CreateTransformer());
         transformers.forEach(baseTransformer -> {
             inst.addTransformer(baseTransformer, true);
             if (isAgentmain) {
@@ -49,11 +51,11 @@ public class MainAgent {
             Class<?>[] classes = inst.getAllLoadedClasses();
             for (Class<?> aClass : classes) {
                 if (classList.contains(aClass.getName())) {
-                    System.out.println(TAG + ": Transform:" + aClass.getName());
+                    LogUtil.info("Transform class:" + aClass.getName());
                     try {
                         inst.retransformClasses(aClass);
                     } catch (UnmodifiableClassException e) {
-                        e.printStackTrace();
+                        LogUtil.error(e.toString());
                     }
                     break;
                 }

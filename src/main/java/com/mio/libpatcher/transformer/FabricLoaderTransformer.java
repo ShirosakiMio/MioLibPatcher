@@ -3,8 +3,6 @@ package com.mio.libpatcher.transformer;
 import javassist.CtClass;
 import javassist.CtMethod;
 
-import java.io.ByteArrayInputStream;
-
 public class FabricLoaderTransformer implements BaseTransformer {
     @Override
     public String getTargetClassName() {
@@ -12,16 +10,12 @@ public class FabricLoaderTransformer implements BaseTransformer {
     }
 
     @Override
-    public byte[] transform(byte[] buffer) throws Throwable {
-        CtClass clazz = pool.makeClass(new ByteArrayInputStream(buffer));
+    public void transform(CtClass clazz) throws Throwable {
         CtMethod[] methods = clazz.getDeclaredMethods("displayError");
         if (methods != null) {
             for (CtMethod method : methods) {
                 method.setBody("{System.exit(1);}");
             }
         }
-        byte[] bytes = clazz.toBytecode();
-        clazz.detach();
-        return bytes;
     }
 }

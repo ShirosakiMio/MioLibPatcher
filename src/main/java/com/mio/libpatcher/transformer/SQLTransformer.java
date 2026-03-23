@@ -2,9 +2,7 @@ package com.mio.libpatcher.transformer;
 
 import javassist.CtClass;
 import javassist.CtMethod;
-import javassist.NotFoundException;
 
-import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,13 +24,8 @@ public class SQLTransformer implements BaseTransformer {
     }
 
     @Override
-    public byte[] transform(byte[] buffer) throws Throwable {
-        CtClass clazz;
-        clazz = pool.makeClass(new ByteArrayInputStream(buffer));
+    public void transform(CtClass clazz) throws Throwable {
         CtMethod method = clazz.getDeclaredMethod("isAndroid");
         method.setBody("{return true;}");
-        byte[] bytes = clazz.toBytecode();
-        clazz.detach();
-        return bytes;
     }
 }

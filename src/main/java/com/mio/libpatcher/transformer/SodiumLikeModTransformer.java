@@ -3,7 +3,6 @@ package com.mio.libpatcher.transformer;
 import javassist.CtClass;
 import javassist.CtMethod;
 
-import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,13 +23,8 @@ public class SodiumLikeModTransformer implements BaseTransformer {
     }
 
     @Override
-    public byte[] transform(byte[] buffer) throws Throwable {
-        CtClass clazz;
-        clazz = pool.makeClass(new ByteArrayInputStream(buffer));
+    public void transform(CtClass clazz) throws Throwable {
         CtMethod method = clazz.getDeclaredMethod("isUsingPojavLauncher");
         method.setBody("{return false;}");
-        byte[] bytes = clazz.toBytecode();
-        clazz.detach();
-        return bytes;
     }
 }
