@@ -36,6 +36,7 @@ public class MainAgent {
         transformers.add(new FabricLoaderTransformer());
         transformers.add(new ForgeModDirTransformer());
         transformers.add(new CreateTransformer());
+        transformers.add(new SableRapierLibTransformer());
         transformers.forEach(baseTransformer -> {
             inst.addTransformer(baseTransformer, true);
             if (isAgentmain) {
