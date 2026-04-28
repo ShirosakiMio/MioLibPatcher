@@ -37,6 +37,7 @@ public class MainAgent {
         transformers.add(new ForgeModDirTransformer());
         transformers.add(new CreateTransformer());
         transformers.add(new SableRapierLibTransformer());
+        transformers.add(new VeilImGuiTransformer());
         transformers.forEach(baseTransformer -> {
             inst.addTransformer(baseTransformer, true);
             if (isAgentmain) {
