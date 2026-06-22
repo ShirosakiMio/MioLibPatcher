@@ -14,7 +14,13 @@ public class FabricLoaderTransformer implements BaseTransformer {
         CtMethod[] methods = clazz.getDeclaredMethods("displayError");
         if (methods != null) {
             for (CtMethod method : methods) {
-                method.setBody("{System.exit(1);}");
+                method.setBody("{" +
+                        "System.out.println(\"start net.fabricmc.loader.impl.gui.FabricGuiEntry.displayError\");" +
+                        "System.out.println($1);" +
+                        "System.out.println($2);" +
+                        "System.out.println(\"end net.fabricmc.loader.impl.gui.FabricGuiEntry.displayError\");" +
+                        " System.exit(1);" +
+                        "}");
             }
         }
     }
