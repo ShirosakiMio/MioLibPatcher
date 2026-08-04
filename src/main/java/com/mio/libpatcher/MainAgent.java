@@ -39,6 +39,7 @@ public class MainAgent {
         transformers.add(new SableRapierLibTransformer());
         transformers.add(new VeilImGuiTransformer());
         transformers.add(new AxiomTransformer());
+        transformers.add(new ALC10Transformer());
         transformers.forEach(baseTransformer -> {
             inst.addTransformer(baseTransformer, true);
             if (isAgentmain) {
