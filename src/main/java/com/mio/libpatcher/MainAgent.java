@@ -40,6 +40,7 @@ public class MainAgent {
         transformers.add(new VeilImGuiTransformer());
         transformers.add(new AxiomTransformer());
         transformers.add(new ALC10Transformer());
+        transformers.add(new ASMTransformer());
         transformers.forEach(baseTransformer -> {
             inst.addTransformer(baseTransformer, true);
             if (isAgentmain) {
