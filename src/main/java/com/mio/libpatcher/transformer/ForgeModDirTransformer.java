@@ -13,10 +13,10 @@ public class ForgeModDirTransformer implements BaseTransformer {
     public void transform(CtClass clazz) throws Throwable {
         CtMethod method = clazz.getDeclaredMethod("visitFile");
         method.insertBefore("{" +
-                "        String name =  $1.getFileName().toString();\n" +
-                "        if (name.endsWith(\".jar\")) {\n" +
-                "            System.out.println(\"Loading mod: \"+ name);\n" +
-                "        }" +
+                "    String name = $1.getFileName().toString();\n" +
+                "    if (name.endsWith(\".jar\")) {\n" +
+                "        System.out.println(\"Loading mod: \" + name);\n" +
+                "    }" +
                 "}");
     }
 }
