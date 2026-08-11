@@ -12,8 +12,6 @@ import java.util.List;
 
 public class MainAgent {
 
-    private static final List<String> classList = new ArrayList<>();
-
     public static void premain(String agentArgs, Instrumentation inst) {
         LogUtil.info("MioPatcher is running!");
         addTransformer(inst, false);
@@ -24,6 +22,34 @@ public class MainAgent {
     }
 
     private static void addTransformer(Instrumentation inst, boolean isAgentmain) {
+        List<BaseTransformer> transformers = createTransformers();
+        List<String> targetClasses = new ArrayList<>();
+        transformers.forEach(baseTransformer -> {
+            inst.addTransformer(baseTransformer, true);
+            if (isAgentmain) {
+                targetClasses.addAll(baseTransformer.getTargetClassNames());
+            }
+        });
+        if (isAgentmain) {
+            retransformLoadedClasses(inst, targetClasses);
+        }
+    }
+
+    private static void retransformLoadedClasses(Instrumentation inst, List<String> targetClasses) {
+        for (Class<?> aClass : inst.getAllLoadedClasses()) {
+            if (!targetClasses.contains(aClass.getName())) {
+                continue;
+            }
+            LogUtil.info("Transform class:" + aClass.getName());
+            try {
+                inst.retransformClasses(aClass);
+            } catch (UnmodifiableClassException e) {
+                LogUtil.error("Failed to retransform class: " + aClass.getName(), e);
+            }
+        }
+    }
+
+    private static List<BaseTransformer> createTransformers() {
         List<BaseTransformer> transformers = new ArrayList<>();
         transformers.add(new TTSTransformer());
         transformers.add(new LibraryTransformer());
@@ -41,30 +67,7 @@ public class MainAgent {
         transformers.add(new AxiomTransformer());
         transformers.add(new ALC10Transformer());
         transformers.add(new ASMTransformer());
-        transformers.forEach(baseTransformer -> {
-            inst.addTransformer(baseTransformer, true);
-            if (isAgentmain) {
-                String className = baseTransformer.getTargetClassName();
-                if (!className.isEmpty()) {
-                    classList.add(className);
-                } else {
-                    classList.addAll(baseTransformer.getTargetClassNames());
-                }
-            }
-        });
-        if (isAgentmain) {
-            Class<?>[] classes = inst.getAllLoadedClasses();
-            for (Class<?> aClass : classes) {
-                if (classList.contains(aClass.getName())) {
-                    LogUtil.info("Transform class:" + aClass.getName());
-                    try {
-                        inst.retransformClasses(aClass);
-                    } catch (UnmodifiableClassException e) {
-                        LogUtil.error(e.toString());
-                    }
-                }
-            }
-        }
+        return transformers;
     }
 
 }

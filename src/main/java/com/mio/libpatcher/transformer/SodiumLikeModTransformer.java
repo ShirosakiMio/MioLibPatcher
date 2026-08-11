@@ -8,11 +8,6 @@ import java.util.List;
 
 public class SodiumLikeModTransformer implements BaseTransformer {
     @Override
-    public String getTargetClassName() {
-        return "";
-    }
-
-    @Override
     public List<String> getTargetClassNames() {
         List<String> nameList = new ArrayList<>();
         nameList.add("net.caffeinemc.mods.sodium.client.compatibility.checks.PostLaunchChecks");
