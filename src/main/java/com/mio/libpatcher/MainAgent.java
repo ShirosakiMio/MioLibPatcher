@@ -62,7 +62,6 @@ public class MainAgent {
                     } catch (UnmodifiableClassException e) {
                         LogUtil.error(e.toString());
                     }
-                    break;
                 }
             }
         }
