@@ -10,6 +10,7 @@ repositories {
 
 dependencies {
     implementation("org.javassist:javassist:3.29.2-GA")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.8.2")
 }
 
 java {
@@ -18,8 +19,11 @@ java {
     }
 }
 
+tasks.test {
+    useJUnitPlatform()
+}
+
 tasks.jar {
-    exclude("Main.class")
     manifest {
         attributes(
             "Manifest-Version" to "1.0",
@@ -30,4 +34,5 @@ tasks.jar {
         )
     }
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+    exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA")
 }
