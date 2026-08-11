@@ -3,6 +3,8 @@ package com.mio.libpatcher.transformer;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.mio.libpatcher.util.LogUtil;
+
 import javassist.CannotCompileException;
 import javassist.CtClass;
 import javassist.CtConstructor;
@@ -16,6 +18,7 @@ import javassist.bytecode.Opcode;
  * some other smart guy mod also does something silly.
  */
 public class ASMTransformer implements BaseTransformer {
+
     @Override
     public String getTargetClassName() {
         return "";
@@ -27,11 +30,11 @@ public class ASMTransformer implements BaseTransformer {
     @Override
     public List<String> getTargetClassNames() {
         List<String> list = new ArrayList<>();
-            list.add("org.objectweb.asm.ClassVisitor");
-            list.add("org.objectweb.asm.MethodVisitor");
-            list.add("org.objectweb.asm.FieldVisitor");
-            list.add("org.objectweb.asm.AnnotationVisitor");
-            list.add("org.objectweb.asm.signature.SignatureVisitor");
+        list.add("org.objectweb.asm.ClassVisitor");
+        list.add("org.objectweb.asm.MethodVisitor");
+        list.add("org.objectweb.asm.FieldVisitor");
+        list.add("org.objectweb.asm.AnnotationVisitor");
+        list.add("org.objectweb.asm.signature.SignatureVisitor");
         return list;
     }
 
@@ -92,8 +95,8 @@ public class ASMTransformer implements BaseTransformer {
                         break;
                     } catch (BadBytecode e) {
                         throw new CannotCompileException(
-                                "Expected IllegalArgumentException bytecode pattern not found," +
-                                        "is this ASM 5.0.4?", e
+                                "Failed to parse bytecode while searching for the" +
+                                        "IllegalArgumentException pattern, is this ASM 5.0.4?", e
                         );
                     }
                 }
@@ -101,13 +104,15 @@ public class ASMTransformer implements BaseTransformer {
         }
     }
 
-    private boolean isASM504(){
+    private boolean isASM504() {
         try {
-            Class<?> Opcodes = Class.forName("org.objectweb.asm.ClassReader");
-            Package asmPackage = Opcodes.getPackage();
+            Class<?> asmClass = Class.forName("org.objectweb.asm.ClassReader");
+            Package asmPackage = asmClass.getPackage();
             String implVersion = asmPackage.getImplementationVersion();
-            if (implVersion.equals("5.0.4")) return true;
-        } catch (Exception ignored) {}
+            if ("5.0.4".equals(implVersion)) return true;
+        } catch (Exception e) {
+            LogUtil.info("Unable to get ASM version info, ASMTransformer patch will be skipped: " + e);
+        }
         return false;
     }
 }
