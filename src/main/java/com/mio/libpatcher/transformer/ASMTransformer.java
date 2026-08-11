@@ -19,11 +19,7 @@ import javassist.bytecode.Opcode;
  */
 public class ASMTransformer implements BaseTransformer {
 
-    @Override
-    public String getTargetClassName() {
-        return "";
-    }
-
+    private static Boolean isASM504Result;
     /**
      * @return Exhaustive list of all 5 visitor classes in ASM 5.0.4
      */
@@ -40,6 +36,7 @@ public class ASMTransformer implements BaseTransformer {
 
     /**
      * WARNING: Should only be used on ASM 5.0.4
+     * Launchers can force the decision via -Dmiolibpatcher.asmBackport=true/false.
      * @throws CannotCompileException If used on the wrong class.
      */
     @Override
@@ -48,7 +45,6 @@ public class ASMTransformer implements BaseTransformer {
         We use ASM 5.0.4 as the override for older ASM versions, forge never shipped with it. So
         let's assume that if its 5.0.4, we overrid the requested ASM version and apply the bug
         backport.
-        TODO: Use a better detection scheme, perhaps provided launcher-side as to when to apply this
          */
         if (!isASM504()) return;
         for (CtConstructor ctor : clazz.getDeclaredConstructors()) {
@@ -105,11 +101,23 @@ public class ASMTransformer implements BaseTransformer {
     }
 
     private boolean isASM504() {
+        // 启动器可通过系统属性强制指定是否启用该补丁
+        String override = System.getProperty("miolibpatcher.asmBackport");
+        if (override != null) {
+            return Boolean.parseBoolean(override);
+        }
+        if (isASM504Result == null) {
+            isASM504Result = detectASM504();
+        }
+        return isASM504Result;
+    }
+
+    private static boolean detectASM504() {
         try {
             Class<?> asmClass = Class.forName("org.objectweb.asm.ClassReader");
             Package asmPackage = asmClass.getPackage();
             String implVersion = asmPackage.getImplementationVersion();
-            if ("5.0.4".equals(implVersion)) return true;
+            return "5.0.4".equals(implVersion);
         } catch (Exception e) {
             LogUtil.info("Unable to get ASM version info, ASMTransformer patch will be skipped: " + e);
         }
