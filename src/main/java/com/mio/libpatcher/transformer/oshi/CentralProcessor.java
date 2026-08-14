@@ -16,6 +16,9 @@ import java.util.List;
  * <li>{@code oshi.software.os.linux.proc.CentralProcessor}（oshi 1.x，部分老 mod 捆绑）：
  * oshi 1.3+ 在静态块中按 /proc/cpuinfo 的 "core id" 行统计 CPU 数，ARM 设备没有该字段会得到 0，
  * 随后构造函数直接抛 IllegalArgumentException；替换构造函数与 getName 绕开设备信息读取。</li>
+ * <li>{@code oshi.software.os.linux.LinuxHardwareAbstractionLayer}（oshi 1.x）：
+ * getProcessors() 直接读取 /proc/cpuinfo，读取失败时返回 null 导致调用方 NPE；
+ * 替换为返回 JVM 可用核心数（-XX:ActiveProcessorCount）个处理器实例。</li>
  * <li>{@code oshi.hardware.platform.linux.LinuxCentralProcessor}（oshi 6.x，Minecraft 自带）：
  * 构造时用 {@code Files.find} 递归遍历 /sys/devices/system/cpu/，受限设备（如 Android/SELinux）下
  * 子目录不可读会抛 UncheckedIOException（RuntimeException，oshi 内部的 catch 捕获不到），
@@ -27,13 +30,17 @@ public class CentralProcessor implements BaseTransformer {
     public List<String> getTargetClassNames() {
         return Arrays.asList(
                 "oshi.software.os.linux.proc.CentralProcessor",
+                "oshi.software.os.linux.LinuxHardwareAbstractionLayer",
                 "oshi.hardware.platform.linux.LinuxCentralProcessor");
     }
 
     @Override
     public void transform(CtClass clazz) throws Throwable {
-        if (clazz.getName().equals("oshi.software.os.linux.proc.CentralProcessor")) {
+        String name = clazz.getName();
+        if (name.equals("oshi.software.os.linux.proc.CentralProcessor")) {
             transformOshi1x(clazz);
+        } else if (name.equals("oshi.software.os.linux.LinuxHardwareAbstractionLayer")) {
+            transformOshi1xHal(clazz);
         } else {
             transformOshi6x(clazz);
         }
@@ -63,6 +70,39 @@ public class CentralProcessor implements BaseTransformer {
         } catch (NotFoundException ignored) {
             // oshi 1.4 及更早版本无该方法，无需处理
         }
+    }
+
+    /**
+     * oshi 1.x：替换 HAL.getProcessors()，不再读取 /proc/cpuinfo。
+     * 读取失败时原实现返回 null 会导致调用方 NPE，这里直接返回
+     * JVM 可用核心数（-XX:ActiveProcessorCount）个处理器实例。
+     */
+    private static void transformOshi1xHal(CtClass clazz) throws Throwable {
+        try {
+            clazz.getDeclaredMethod("getProcessors");
+        } catch (NotFoundException e) {
+            return; // 其它版本的 HAL 无此方法，无需处理
+        }
+        // 1.2 的 CentralProcessor 为无参构造，1.3+ 为 int 构造，按实际签名生成
+        boolean intCtor = false;
+        try {
+            CtClass cpuClass = clazz.getClassPool().get("oshi.software.os.linux.proc.CentralProcessor");
+            cpuClass.getDeclaredConstructor(new CtClass[]{CtClass.intType});
+            intCtor = true;
+        } catch (NotFoundException ignored) {
+            // 1.2 为无参构造
+        }
+        String ctor = intCtor
+                ? "new oshi.software.os.linux.proc.CentralProcessor(i)"
+                : "new oshi.software.os.linux.proc.CentralProcessor()";
+        String body = "{"
+                + "int n = java.lang.Runtime.getRuntime().availableProcessors();"
+                + "oshi.hardware.Processor[] arr = new oshi.hardware.Processor[n];"
+                + "for (int i = 0; i < n; i++) { arr[i] = " + ctor + "; }"
+                + "return arr;"
+                + "}";
+        CtMethod method = clazz.getDeclaredMethod("getProcessors");
+        method.setBody(body);
     }
 
     /**

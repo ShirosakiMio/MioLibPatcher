@@ -10,6 +10,8 @@ import javassist.CtMethod;
 import javassist.CtNewConstructor;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 /**
  * 冒烟测试：用 javassist 在内存中构造模拟目标类，
  * 验证各 transformer 的 transform 不抛异常且能生成字节码。
@@ -81,6 +83,32 @@ class BaseTransformerSmokeTest {
         CtClass cc = makeClass("oshi.software.os.linux.proc.CentralProcessor",
                 "public String getName() { return null; }");
         assertTransformSucceeds(new CentralProcessor(), cc);
+    }
+
+    @Test
+    void halGetProcessors() throws Exception {
+        // oshi 1.x：HAL.getProcessors() 读取 /proc/cpuinfo，失败时返回 null 导致调用方 NPE。
+        // 验证替换后返回 availableProcessors 个 CentralProcessor 实例，且 getName 返回系统属性。
+        ClassPool pool = new ClassPool(true);
+        CtClass proc = pool.makeInterface("oshi.hardware.Processor");
+        CtClass cpu = pool.makeClass("oshi.software.os.linux.proc.CentralProcessor");
+        cpu.addInterface(proc);
+        cpu.addConstructor(CtNewConstructor.make("public CentralProcessor(int procNo) {}", cpu));
+        cpu.addMethod(CtMethod.make("public String getName() { return null; }", cpu));
+        CtClass hal = pool.makeClass("oshi.software.os.linux.LinuxHardwareAbstractionLayer");
+        hal.addMethod(CtMethod.make("public oshi.hardware.Processor[] getProcessors() { return null; }", hal));
+        try {
+            new CentralProcessor().transform(hal);
+        } catch (Throwable e) {
+            throw new AssertionError("transform 失败", e);
+        }
+        Class<?> procClazz = proc.toClass();
+        cpu.toClass();
+        Class<?> clazz = hal.toClass();
+        Object instance = clazz.getDeclaredConstructor().newInstance();
+        Object[] arr = (Object[]) clazz.getMethod("getProcessors").invoke(instance);
+        assertEquals(Runtime.getRuntime().availableProcessors(), arr.length);
+        assertEquals("oshi.software.os.linux.proc.CentralProcessor", arr[0].getClass().getName());
     }
 
     @Test
