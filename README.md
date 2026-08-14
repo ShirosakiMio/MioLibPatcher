@@ -15,7 +15,7 @@ MioLibPatcher 在类加载时对指定类进行字节码转换，目前包含以
 | `org.lwjgl.system.Library`                                                                                                        | 跳过 lwjgl 的哈希校验（`checkHash`）                                       |
 | `net.vulkanmod.vulkan.SystemInfo`                                                                                                 | CPU 信息改用系统属性 `cpu.name`，避免解析 `/proc/cpuinfo` 失败                   |
 | `com.therandomlabs.randompatches.client.WindowIconHandler`                                                                        | 禁用窗口图标设置（避免模组崩溃）                                                  |
-| `oshi.hardware.CentralProcessor$ProcessorIdentifier` / `oshi.software.os.linux.proc.CentralProcessor`                             | CPU 名称改用系统属性 `cpu.name`                                           |
+| `oshi.hardware.CentralProcessor$ProcessorIdentifier` / `oshi.software.os.linux.proc.CentralProcessor`（oshi 1.x）/ `oshi.hardware.platform.linux.LinuxCentralProcessor`（oshi 6.x） | CPU 名称改用系统属性 `cpu.name`，核心数取自 JVM 的 `-XX:ActiveProcessorCount`，跳过设备拓扑信息读取 |
 | `net.caffeinemc.mods.sodium.client...` / `me.jellysquid.mods.sodium.client...` / `org.embeddedt.embeddium...` 等                   | Sodium/Embeddium 的 PojavLauncher 检测返回 false                       |
 | `dh_sqlite.util.OSInfo` / `org.rfresh.sqlite.util.OSInfo` / `org.sqlite.util.OSInfo` / `io.netty.util.internal.PlatformDependent` | `isAndroid` 返回 true（sqlite / e4mc 兼容）                             |
 | `net.fabricmc.loader.impl.gui.FabricGuiEntry`                                                                                     | 模组加载错误打印到日志后退出（替代 GUI）                                            |
