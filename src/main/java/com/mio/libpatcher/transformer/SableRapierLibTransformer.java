@@ -15,6 +15,13 @@ public class SableRapierLibTransformer implements BaseTransformer {
 
     @Override
     public void transform(CtClass clazz) throws Throwable {
+        // User override
+        String override = System.getProperty("miolibpatcher.sablerapier");
+        if (override != null && !Boolean.parseBoolean(override)) return;
+
+        // If there is no set path, this transform is useless, assume there is another method mixin
+        // and disable this transform so we don't break mods that provide rapier natives.
+        if (System.getProperty("sable_rapier_path") == null) return;
         CtMethod loadLibraryMethod = clazz.getDeclaredMethod("loadLibrary");
 
         loadLibraryMethod.instrument(new ExprEditor() {
