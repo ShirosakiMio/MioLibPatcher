@@ -73,6 +73,7 @@ jattach <pid> load instrument=false MioLibPatcher.jar
 | `imgui.library.path`        | ImGui 原生库所在目录（与 `imgui.library.name` 同时指定时生效）     |
 | `imgui.library.name`        | ImGui 原生库文件名                                      |
 | `miolibpatcher.alc10`       | `true` 时启用 ALC10 补丁，默认 `false`                    |
+| `miolibpatcher.sablerapier` | `true`/`false` 强制指定是否启用 Rapier 补丁；未设置时自动检测 `sable_rapier_path` 是否已设置 |
 | `miolibpatcher.asmBackport` | `true`/`false` 强制指定是否启用 ASM 补丁；不设置时自动检测 ASM 5.0.4 |
 
 ## 开发
