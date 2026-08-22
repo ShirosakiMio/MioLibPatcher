@@ -67,6 +67,7 @@ public class MainAgent {
         transformers.add(new AxiomTransformer());
         transformers.add(new ALC10Transformer());
         transformers.add(new ASMTransformer());
+        transformers.add(new SmoothFontTransformer());
         return transformers;
     }
 
