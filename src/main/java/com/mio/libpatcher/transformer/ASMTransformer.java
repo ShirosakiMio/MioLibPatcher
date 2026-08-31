@@ -26,6 +26,12 @@ public class ASMTransformer implements BaseTransformer {
     @Override
     public List<String> getTargetClassNames() {
         List<String> list = new ArrayList<>();
+        /*
+        We use ASM 5.0.4 as the override for older ASM versions, forge never shipped with it. So
+        let's assume that if its 5.0.4, we overrid the requested ASM version and apply the bug
+        backport.
+         */
+        if (!isASM504()) return list;
         list.add("org.objectweb.asm.ClassVisitor");
         list.add("org.objectweb.asm.MethodVisitor");
         list.add("org.objectweb.asm.FieldVisitor");
@@ -41,12 +47,6 @@ public class ASMTransformer implements BaseTransformer {
      */
     @Override
     public void transform(CtClass clazz) throws CannotCompileException {
-        /*
-        We use ASM 5.0.4 as the override for older ASM versions, forge never shipped with it. So
-        let's assume that if its 5.0.4, we overrid the requested ASM version and apply the bug
-        backport.
-         */
-        if (!isASM504()) return;
         for (CtConstructor ctor : clazz.getDeclaredConstructors()) {
             if (!ctor.isClassInitializer()) {
                 CodeIterator it = ctor.getMethodInfo().getCodeAttribute().iterator();
@@ -114,7 +114,9 @@ public class ASMTransformer implements BaseTransformer {
 
     private static boolean detectASM504() {
         try {
-            Class<?> asmClass = Class.forName("org.objectweb.asm.ClassReader");
+            // Ensure we do NOT initialize the class, otherwise some mod loaders (fabric) can
+            // cause duplicate class to load in their classloader, causing a crash.
+            Class<?> asmClass = Class.forName("org.objectweb.asm.ClassReader", false, ClassLoader.getSystemClassLoader());
             Package asmPackage = asmClass.getPackage();
             String implVersion = asmPackage.getImplementationVersion();
             return "5.0.4".equals(implVersion);
