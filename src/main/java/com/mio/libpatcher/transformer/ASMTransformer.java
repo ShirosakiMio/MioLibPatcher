@@ -19,7 +19,24 @@ import javassist.bytecode.Opcode;
  */
 public class ASMTransformer implements BaseTransformer {
 
-    private static Boolean isASM504Result;
+    private final boolean asm504Enabled;
+
+    /**
+     * 版本检测在构造器（premain 阶段）完成一次并缓存结果。
+     * 检测包含 Class.forName 类加载操作，绝不能放进 transform 回调里执行：
+     * 回调发生在 JVM 定义类的过程中，此时再做类加载会与正在进行的类定义重入，
+     * 触发 ClassCircularityError（Forge 引导期即崩溃，见 49e4a6e 回归）。
+     */
+    public ASMTransformer() {
+        // 启动器可通过系统属性强制指定是否启用该补丁
+        String override = System.getProperty("miolibpatcher.asmBackport");
+        if (override != null) {
+            asm504Enabled = Boolean.parseBoolean(override);
+        } else {
+            asm504Enabled = detectASM504();
+        }
+    }
+
     /**
      * @return Exhaustive list of all 5 visitor classes in ASM 5.0.4
      */
@@ -31,7 +48,7 @@ public class ASMTransformer implements BaseTransformer {
         let's assume that if its 5.0.4, we overrid the requested ASM version and apply the bug
         backport.
          */
-        if (!isASM504()) return list;
+        if (!asm504Enabled) return list;
         list.add("org.objectweb.asm.ClassVisitor");
         list.add("org.objectweb.asm.MethodVisitor");
         list.add("org.objectweb.asm.FieldVisitor");
@@ -47,6 +64,7 @@ public class ASMTransformer implements BaseTransformer {
      */
     @Override
     public void transform(CtClass clazz) throws CannotCompileException {
+        if (!asm504Enabled) return;
         for (CtConstructor ctor : clazz.getDeclaredConstructors()) {
             if (!ctor.isClassInitializer()) {
                 CodeIterator it = ctor.getMethodInfo().getCodeAttribute().iterator();
@@ -98,18 +116,6 @@ public class ASMTransformer implements BaseTransformer {
                 }
             }
         }
-    }
-
-    private boolean isASM504() {
-        // 启动器可通过系统属性强制指定是否启用该补丁
-        String override = System.getProperty("miolibpatcher.asmBackport");
-        if (override != null) {
-            return Boolean.parseBoolean(override);
-        }
-        if (isASM504Result == null) {
-            isASM504Result = detectASM504();
-        }
-        return isASM504Result;
     }
 
     private static boolean detectASM504() {
