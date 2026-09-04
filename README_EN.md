@@ -31,9 +31,9 @@ MioLibPatcher transforms target classes at class-load time. Currently it include
 ### Notes
 
 - **ASM patch**: Only takes effect on ASM 5.0.4; it removes the `IllegalArgumentException` check in visitor
-  constructors. By default the ASM version is auto-detected. Launchers can force the decision via the system property
-  `miolibpatcher.asmBackport=true/false`. The patch affects every mod using ASM 5.0.4 in the game, so enable it with
-  care.
+  constructors (for compatibility with mods that misuse older ASM APIs, such as Applied Energistics 1).
+  **Disabled by default**; enable it explicitly with `miolibpatcher.asmBackport=true`. The patch affects every mod
+  using ASM 5.0.4 in the game, so enable it with care.
 - **ALC10 patch**: Disabled by default; enable it explicitly with `miolibpatcher.alc10=true`.
 
 ## Usage
@@ -78,7 +78,7 @@ registered transformers at load time.
 | `imgui.library.name`        | File name of the ImGui native library                                                            |
 | `miolibpatcher.alc10`       | `true` enables the ALC10 patch, default `false`                                                  |
 | `miolibpatcher.sablerapier` | `true`/`false` forces the Rapier patch on/off; when unset, detects if `sable_rapier_path` is set |
-| `miolibpatcher.asmBackport` | `true`/`false` forces the ASM patch on/off; when unset, ASM 5.0.4 is auto-detected               |
+| `miolibpatcher.asmBackport` | `true` enables the ASM patch; disabled by default (unset or any other value disables it) |
 
 ## Development
 

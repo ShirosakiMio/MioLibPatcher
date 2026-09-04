@@ -3,8 +3,6 @@ package com.mio.libpatcher.transformer;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.mio.libpatcher.util.LogUtil;
-
 import javassist.CannotCompileException;
 import javassist.CtClass;
 import javassist.CtConstructor;
@@ -22,19 +20,13 @@ public class ASMTransformer implements BaseTransformer {
     private final boolean asm504Enabled;
 
     /**
-     * 版本检测在构造器（premain 阶段）完成一次并缓存结果。
-     * 检测包含 Class.forName 类加载操作，绝不能放进 transform 回调里执行：
-     * 回调发生在 JVM 定义类的过程中，此时再做类加载会与正在进行的类定义重入，
-     * 触发 ClassCircularityError（Forge 引导期即崩溃，见 49e4a6e 回归）。
+     * 补丁默认关闭，仅当启动器显式指定 -Dmiolibpatcher.asmBackport=true 时启用。
+     * 在构造器（premain 阶段）读取系统属性并缓存结果；transform 回调路径禁止任何
+     * 类加载/探测操作（回调发生在 JVM 定义类的过程中，曾因 Class.forName 重入触发
+     * ClassCircularityError，见 49e4a6e 回归）。
      */
     public ASMTransformer() {
-        // 启动器可通过系统属性强制指定是否启用该补丁
-        String override = System.getProperty("miolibpatcher.asmBackport");
-        if (override != null) {
-            asm504Enabled = Boolean.parseBoolean(override);
-        } else {
-            asm504Enabled = detectASM504();
-        }
+        asm504Enabled = Boolean.parseBoolean(System.getProperty("miolibpatcher.asmBackport", "false"));
     }
 
     /**
@@ -44,9 +36,9 @@ public class ASMTransformer implements BaseTransformer {
     public List<String> getTargetClassNames() {
         List<String> list = new ArrayList<>();
         /*
-        We use ASM 5.0.4 as the override for older ASM versions, forge never shipped with it. So
-        let's assume that if its 5.0.4, we overrid the requested ASM version and apply the bug
-        backport.
+        可选补丁：ASM 5.0.4 覆盖版（forge 未自带）中 visitor 构造器会拒绝旧版本传入的非法
+        Opcode，回退兼容旧版本模组的错误用法（如 Applied Energistics 1）。
+        默认关闭，仅当启动器显式指定 -Dmiolibpatcher.asmBackport=true 时启用。
          */
         if (!asm504Enabled) return list;
         list.add("org.objectweb.asm.ClassVisitor");
@@ -59,7 +51,7 @@ public class ASMTransformer implements BaseTransformer {
 
     /**
      * WARNING: Should only be used on ASM 5.0.4
-     * Launchers can force the decision via -Dmiolibpatcher.asmBackport=true/false.
+     * Enable it via -Dmiolibpatcher.asmBackport=true (disabled by default).
      * @throws CannotCompileException If used on the wrong class.
      */
     @Override
@@ -116,19 +108,5 @@ public class ASMTransformer implements BaseTransformer {
                 }
             }
         }
-    }
-
-    private static boolean detectASM504() {
-        try {
-            // Ensure we do NOT initialize the class, otherwise some mod loaders (fabric) can
-            // cause duplicate class to load in their classloader, causing a crash.
-            Class<?> asmClass = Class.forName("org.objectweb.asm.ClassReader", false, ClassLoader.getSystemClassLoader());
-            Package asmPackage = asmClass.getPackage();
-            String implVersion = asmPackage.getImplementationVersion();
-            return "5.0.4".equals(implVersion);
-        } catch (Exception e) {
-            LogUtil.info("Unable to get ASM version info, ASMTransformer patch will be skipped: " + e);
-        }
-        return false;
     }
 }

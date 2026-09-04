@@ -30,9 +30,9 @@ MioLibPatcher 在类加载时对指定类进行字节码转换，目前包含以
 
 ### 特殊说明
 
-- **ASM 补丁**：仅针对 ASM 5.0.4 生效，会移除 visitor 构造器的 `IllegalArgumentException` 校验。默认自动检测 ASM
-  版本；也可通过系统属性 `miolibpatcher.asmBackport=true/false` 由启动器强制指定。该补丁会影响游戏中所有使用 ASM 5.0.4
-  的模组，请谨慎启用。
+- **ASM 补丁**：仅针对 ASM 5.0.4 生效，会移除 visitor 构造器的 `IllegalArgumentException` 校验（用于兼容
+  Applied Energistics 1 等模组对旧 ASM 的错误用法）。**默认关闭**，仅当启动器通过系统属性
+  `miolibpatcher.asmBackport=true` 显式启用时生效。该补丁会影响游戏中所有使用 ASM 5.0.4 的模组，请谨慎启用。
 - **ALC10 补丁**：默认关闭，需通过系统属性 `miolibpatcher.alc10=true` 显式启用。
 
 ## 使用方法
@@ -75,7 +75,7 @@ jattach <pid> load instrument=false MioLibPatcher.jar
 | `imgui.library.name`        | ImGui 原生库文件名                                                         |
 | `miolibpatcher.alc10`       | `true` 时启用 ALC10 补丁，默认 `false`                                       |
 | `miolibpatcher.sablerapier` | `true`/`false` 强制指定是否启用 Rapier 补丁；未设置时自动检测 `sable_rapier_path` 是否已设置 |
-| `miolibpatcher.asmBackport` | `true`/`false` 强制指定是否启用 ASM 补丁；不设置时自动检测 ASM 5.0.4                    |
+| `miolibpatcher.asmBackport` | `true` 时启用 ASM 补丁，默认关闭（不设置或设为其他值均不启用）              |
 
 ## 开发
 
