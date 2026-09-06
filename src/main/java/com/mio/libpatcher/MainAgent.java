@@ -1,5 +1,6 @@
 package com.mio.libpatcher;
 
+import com.mio.libpatcher.jsound.JSoundProvider;
 import com.mio.libpatcher.transformer.*;
 import com.mio.libpatcher.transformer.oshi.CentralProcessor;
 import com.mio.libpatcher.transformer.oshi.ProcessorIdentifierTransformer;
@@ -15,10 +16,40 @@ public class MainAgent {
     public static void premain(String agentArgs, Instrumentation inst) {
         LogUtil.info("MioPatcher is running!");
         addTransformer(inst, false);
+        registerJSound();
     }
 
     public static void agentmain(String agentArgs, Instrumentation inst) {
         addTransformer(inst, true);
+        registerJSound();
+    }
+
+    /**
+     * Registers the javax.sound.sampled -> OpenAL bridge. The agent jar is on the
+     * system class path, so the bridge classes are visible to the game without
+     * touching the launch classpath. Guarded by a class presence check because the
+     * bridge is written against LWJGL3's org.lwjgl.openal bindings, which legacy
+     * LWJGL2 games (MC <= 1.12) do not have.
+     */
+    private static void registerJSound() {
+        if (!Boolean.parseBoolean(System.getProperty("miolibpatcher.jsound", "true"))) {
+            LogUtil.info("JSound disabled via miolibpatcher.jsound");
+            return;
+        }
+        try {
+            Class.forName("org.lwjgl.openal.ALC10", false, MainAgent.class.getClassLoader());
+        } catch (ClassNotFoundException e) {
+            LogUtil.info("JSound skipped: no LWJGL3 OpenAL on the classpath");
+            return;
+        } catch (Throwable t) {
+            LogUtil.error("JSound classpath check failed", t);
+            return;
+        }
+        try {
+            JSoundProvider.register();
+        } catch (Throwable t) {
+            LogUtil.error("JSound registration failed", t);
+        }
     }
 
     private static void addTransformer(Instrumentation inst, boolean isAgentmain) {

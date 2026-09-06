@@ -36,6 +36,23 @@ MioLibPatcher transforms target classes at class-load time. Currently it include
   care.
 - **ALC10 patch**: Disabled by default; enable it explicitly with `miolibpatcher.alc10=true`.
 
+### JSound (javax.sound.sampled → OpenAL bridge, built-in non-transform feature)
+
+Besides bytecode transformation, the agent ships a pure-Java `javax.sound.sampled` backend
+(the `com.mio.libpatcher.jsound` package) that routes `AudioSystem` / `Clip` / `SourceDataLine` /
+`TargetDataLine` through the game's own LWJGL3 OpenAL. This fixes mod music being silent on Android
+launchers whose JRE lacks `libjsound.so`:
+
+- Registered in premain (before any mod loader) via two routes: the standard
+  `META-INF/services/javax.sound.sampled.spi.MixerProvider` ServiceLoader discovery and reflection
+  injection into the `AudioSystem` provider cache (compatible with patched JREs that keep a `mixers`
+  field). The agent jar lives on the system class path, so the game can load the bridge classes.
+- Supported formats: PCM 8/16 bit, mono/stereo, 4000–192000 Hz (8-bit unsigned / 16-bit signed, with
+  automatic endian and unsigned conversions). Recording (`TargetDataLine`) requires ALC_EXT_CAPTURE.
+- Only enabled when `org.lwjgl.openal.ALC10` is present (LWJGL3, MC 1.13+); legacy LWJGL2 games are
+  skipped automatically.
+- Can be disabled with the `miolibpatcher.jsound=false` system property.
+
 ## Usage
 
 ### Build
@@ -76,6 +93,7 @@ registered transformers at load time.
 | `sable_rapier_path`         | Absolute path of the Sable Rapier native library                                                 |
 | `imgui.library.path`        | Directory of the ImGui native library (used together with `imgui.library.name`)                  |
 | `imgui.library.name`        | File name of the ImGui native library                                                            |
+| `miolibpatcher.jsound`      | `true`/`false` controls JSound (javax.sound → OpenAL) registration, default `true`               |
 | `miolibpatcher.alc10`       | `true` enables the ALC10 patch, default `false`                                                  |
 | `miolibpatcher.sablerapier` | `true`/`false` forces the Rapier patch on/off; when unset, detects if `sable_rapier_path` is set |
 | `miolibpatcher.asmBackport` | `true`/`false` forces the ASM patch on/off; when unset, ASM 5.0.4 is auto-detected               |

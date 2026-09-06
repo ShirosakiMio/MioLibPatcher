@@ -35,6 +35,20 @@ MioLibPatcher 在类加载时对指定类进行字节码转换，目前包含以
   的模组，请谨慎启用。
 - **ALC10 补丁**：默认关闭，需通过系统属性 `miolibpatcher.alc10=true` 显式启用。
 
+### JSound（javax.sound.sampled → OpenAL 桥接，内置非转换类补丁）
+
+除字节码转换外，agent 还内置了一个纯 Java 实现的 `javax.sound.sampled` 后端（`com.mio.libpatcher.jsound` 包），
+把 `AudioSystem` / `Clip` / `SourceDataLine` / `TargetDataLine` 路由到游戏自带的 LWJGL3 OpenAL 上，
+修复 Android 端 JRE 缺失 `libjsound.so` 导致的模组音乐无法播放问题：
+
+- 通过 `META-INF/services/javax.sound.sampled.spi.MixerProvider`（标准 ServiceLoader 发现）和反射注入
+  `AudioSystem` 提供者缓存（兼容带 `mixers` 字段的魔改 JRE）双路径注册；
+- 在 premain 阶段注册，早于任何模组加载器；agent jar 位于系统 classpath，游戏类可直接加载桥接类；
+- 支持格式：PCM 8/16 bit、单声道/立体声、4000–192000 Hz（8bit 无符号 / 16bit 有符号，自动端序与无符号转换）；
+  录音（TargetDataLine）依赖 ALC_EXT_CAPTURE；
+- 仅在检测到 `org.lwjgl.openal.ALC10`（即 LWJGL3，MC 1.13+）时启用，旧版 LWJGL2 游戏自动跳过；
+- 可通过系统属性 `miolibpatcher.jsound=false` 关闭。
+
 ## 使用方法
 
 ### 构建
@@ -74,6 +88,7 @@ jattach <pid> load instrument=false MioLibPatcher.jar
 | `imgui.library.path`        | ImGui 原生库所在目录（与 `imgui.library.name` 同时指定时生效）                        |
 | `imgui.library.name`        | ImGui 原生库文件名                                                         |
 | `miolibpatcher.alc10`       | `true` 时启用 ALC10 补丁，默认 `false`                                       |
+| `miolibpatcher.jsound`      | `true`/`false` 控制 JSound（javax.sound → OpenAL）注册，默认 `true`           |
 | `miolibpatcher.sablerapier` | `true`/`false` 强制指定是否启用 Rapier 补丁；未设置时自动检测 `sable_rapier_path` 是否已设置 |
 | `miolibpatcher.asmBackport` | `true`/`false` 强制指定是否启用 ASM 补丁；不设置时自动检测 ASM 5.0.4                    |
 
