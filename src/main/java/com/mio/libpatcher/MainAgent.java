@@ -54,6 +54,7 @@ public class MainAgent {
         transformers.add(new TTSTransformer());
         transformers.add(new LibraryTransformer());
         transformers.add(new SystemInfoTransformer());
+        transformers.add(new NarratorGuardTransformer());
         transformers.add(new RandomPatchesTransformer());
         transformers.add(new ProcessorIdentifierTransformer());
         transformers.add(new CentralProcessor());

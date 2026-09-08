@@ -49,6 +49,32 @@ class BaseTransformerSmokeTest {
     }
 
     @Test
+    void ttsWireBridge() throws Exception {
+        // 使用独立 ClassPool 模拟桥接类存在的环境，避免污染 default 池影响其他用例
+        ClassPool wirePool = new ClassPool(null);
+        wirePool.appendSystemPath();
+        CtClass bridge = wirePool.makeClass("com.movtery.text2speech_bridge.AndroidNarrator");
+        bridge.addMethod(CtMethod.make("public static Object getInstance() { return null; }", bridge));
+        CtClass cc = wirePool.makeClass("com.mojang.text2speech.NarratorWire");
+        cc.addMethod(CtMethod.make("public static Object getNarrator() { return null; }", cc));
+        assertTransformSucceeds(new TTSTransformer(), cc);
+    }
+
+    @Test
+    void narratorGuard() throws Exception {
+        CtClass cc = makeClass("net.minecraft.client.GameNarrator",
+                "public void checkStatus(boolean required) { throw new RuntimeException(required ? \"a\" : \"b\"); }");
+        assertTransformSucceeds(new NarratorGuardTransformer(), cc);
+    }
+
+    @Test
+    void narratorGuardWithoutCheckStatus() throws Exception {
+        CtClass cc = makeClass("net.minecraft.client.GameNarratorLegacy",
+                "public void clear() { }");
+        assertTransformSucceeds(new NarratorGuardTransformer(), cc);
+    }
+
+    @Test
     void library() throws Exception {
         CtClass cc = makeClass("org.lwjgl.system.Library",
                 "public static void checkHash(String lib) { int x = 1; }");
