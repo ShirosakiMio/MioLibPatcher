@@ -11,7 +11,7 @@ MioLibPatcher 在类加载时对指定类进行字节码转换，目前包含以
 
 | 目标类                                                                                                                                                                                                                                    | 修复内容                                                                      |
 |----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------|
-| `com.mojang.text2speech.Narrator`                                                                                                                                                                                                      | 禁用 TTS 朗读，`getNarrator` 返回哑实现                                             |
+| `com.mojang.text2speech.Narrator`                                                                                                                                                                                                      | 禁用 TTS 朗读，`getNarrator` 返回哑实现（默认关闭，启动器已提供 libflite 桥接安卓 TTS）   |
 | `org.lwjgl.system.Library`                                                                                                                                                                                                             | 跳过 lwjgl 的哈希校验（`checkHash`）                                               |
 | `net.vulkanmod.vulkan.SystemInfo`                                                                                                                                                                                                      | CPU 信息改用系统属性 `cpu.name`，避免解析 `/proc/cpuinfo` 失败                           |
 | `com.therandomlabs.randompatches.client.WindowIconHandler`                                                                                                                                                                             | 禁用窗口图标设置（避免模组崩溃）                                                          |
@@ -77,6 +77,7 @@ jattach <pid> load instrument=false MioLibPatcher.jar
 | `miolibpatcher.alc10`       | `true` 时启用 ALC10 补丁，默认 `false`                                       |
 | `miolibpatcher.sablerapier` | `true`/`false` 强制指定是否启用 Rapier 补丁；未设置时自动检测 `sable_rapier_path` 是否已设置 |
 | `miolibpatcher.asmBackport` | `true`（不区分大小写）时启用 ASM 补丁，默认关闭 |
+| `miolibpatcher.ttsDisable`  | `true` 时禁用 TTS 朗读（返回哑实现），默认 `false`                            |
 
 ## 开发
 
