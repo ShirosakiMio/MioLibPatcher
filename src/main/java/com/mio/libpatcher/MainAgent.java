@@ -52,6 +52,7 @@ public class MainAgent {
     private static List<BaseTransformer> createTransformers() {
         List<BaseTransformer> transformers = new ArrayList<>();
         transformers.add(new TTSTransformer());
+        transformers.add(new TTSCancelTransformer());
         transformers.add(new LibraryTransformer());
         transformers.add(new SystemInfoTransformer());
         transformers.add(new RandomPatchesTransformer());
