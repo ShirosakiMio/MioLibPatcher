@@ -11,12 +11,17 @@ repositories {
 dependencies {
     implementation("org.javassist:javassist:3.29.2-GA")
     testImplementation("org.junit.jupiter:junit-jupiter:5.8.2")
+    testImplementation("com.github.oshi:oshi-core:5.8.5")
 }
 
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(8))
     }
+}
+
+tasks.withType<JavaCompile> {
+    options.encoding = "UTF-8"
 }
 
 tasks.test {

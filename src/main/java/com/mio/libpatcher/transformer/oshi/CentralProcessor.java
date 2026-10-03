@@ -1,6 +1,7 @@
 package com.mio.libpatcher.transformer.oshi;
 
 import com.mio.libpatcher.transformer.BaseTransformer;
+import javassist.CannotCompileException;
 import javassist.CtClass;
 import javassist.CtConstructor;
 import javassist.CtMethod;
@@ -19,10 +20,12 @@ import java.util.List;
  * <li>{@code oshi.software.os.linux.LinuxHardwareAbstractionLayer}（oshi 1.x）：
  * getProcessors() 直接读取 /proc/cpuinfo，读取失败时返回 null 导致调用方 NPE；
  * 替换为返回 JVM 可用核心数（-XX:ActiveProcessorCount）个处理器实例。</li>
- * <li>{@code oshi.hardware.platform.linux.LinuxCentralProcessor}（oshi 6.x，Minecraft 自带）：
- * 构造时用 {@code Files.find} 递归遍历 /sys/devices/system/cpu/，受限设备（如 Android/SELinux）下
- * 子目录不可读会抛 UncheckedIOException（RuntimeException，oshi 内部的 catch 捕获不到），
- * 导致处理器构造失败；替换 initProcessorCounts 不再读取任何设备信息。</li>
+ * <li>{@code oshi.hardware.platform.linux.LinuxCentralProcessor}（oshi 5.x/6.x，Minecraft 自带）：
+ * 构造时读取 /proc/cpuinfo 并用 {@code Files.find} 递归遍历 /sys/devices/system/cpu/，
+ * 受限设备（如 Android/SELinux）下读取失败会抛 UncheckedIOException（RuntimeException，
+ * oshi 内部的 catch 捕获不到），导致处理器构造失败；替换 initProcessorCounts 不再读取
+ * 任何设备信息。注入体的返回值须匹配各版本方法签名：5.x 为 List，6.2.x 为 Pair，
+ * 6.4.x 为 Triplet，6.6.x 为 Quartet。</li>
  * </ul>
  */
 public class CentralProcessor implements BaseTransformer {
@@ -106,21 +109,28 @@ public class CentralProcessor implements BaseTransformer {
     }
 
     /**
-     * oshi 6.x：替换 initProcessorCounts，逻辑处理器数量取 JVM 的
-     * {@code -XX:ActiveProcessorCount}（Runtime.availableProcessors），绕开 /sys、/proc 读取。
+     * oshi 5.x/6.x：替换 initProcessorCounts，逻辑处理器数量取 JVM 的
+     * {@code -XX:ActiveProcessorCount}（Runtime.availableProcessors），绕开 /proc、/sys 读取。
+     * 注入体的返回值必须与方法实际签名匹配（javassist 不校验返回类型，包错只会在
+     * AbstractCentralProcessor 构造器遍历逻辑处理器时抛 IncompatibleClassChangeError）：
+     * 5.x（如 Minecraft 自带的 5.8.5）为 List，6.2.x 为 Pair，6.4.x 为 Triplet，6.6.x 为 Quartet
+     * （空拓扑由 AbstractCentralProcessor 的 failsafe 兜底）。
      */
     private static void transformOshi6x(CtClass clazz) throws Throwable {
         CtMethod method = clazz.getDeclaredMethod("initProcessorCounts");
-        // 不同 oshi 版本的返回类型不同：6.2.x 为 Pair，6.4.x 为 Triplet，6.6.x 为 Quartet，
-        // 按实际签名生成对应的固定返回值（空拓扑由 AbstractCentralProcessor 的 failsafe 兜底）。
         String returnType = method.getReturnType().getName();
-        String tupleCtor;
-        if (returnType.endsWith("Quartet")) {
-            tupleCtor = "new oshi.util.tuples.Quartet(logProcs, null, null, new java.util.ArrayList())";
+        String returnValue;
+        if (returnType.equals("java.util.List")) {
+            // 5.x 直接返回逻辑处理器列表，不能包成元组
+            returnValue = "logProcs";
+        } else if (returnType.endsWith("Quartet")) {
+            returnValue = "new oshi.util.tuples.Quartet(logProcs, null, null, new java.util.ArrayList())";
         } else if (returnType.endsWith("Triplet")) {
-            tupleCtor = "new oshi.util.tuples.Triplet(logProcs, null, null)";
+            returnValue = "new oshi.util.tuples.Triplet(logProcs, null, null)";
+        } else if (returnType.endsWith("Pair")) {
+            returnValue = "new oshi.util.tuples.Pair(logProcs, null)";
         } else {
-            tupleCtor = "new oshi.util.tuples.Pair(logProcs, null)";
+            throw new CannotCompileException("Unsupported initProcessorCounts return type: " + returnType);
         }
         String body = "{"
                 + "java.util.List logProcs = new java.util.ArrayList();"
@@ -128,7 +138,7 @@ public class CentralProcessor implements BaseTransformer {
                 + "for (int i = 0; i < n; i++) {"
                 + "logProcs.add(new oshi.hardware.CentralProcessor$LogicalProcessor(i, i, 0));"
                 + "}"
-                + "return " + tupleCtor + ";"
+                + "return " + returnValue + ";"
                 + "}";
         method.setBody(body);
     }

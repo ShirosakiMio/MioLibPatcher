@@ -10,7 +10,14 @@ import javassist.CtMethod;
 import javassist.CtNewConstructor;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * 冒烟测试：用 javassist 在内存中构造模拟目标类，
@@ -24,6 +31,16 @@ class BaseTransformerSmokeTest {
             cc.addMethod(CtMethod.make(source, cc));
         }
         return cc;
+    }
+
+    private static byte[] readAllBytes(InputStream in) throws Exception {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        byte[] buf = new byte[8192];
+        int n;
+        while ((n = in.read(buf)) != -1) {
+            out.write(buf, 0, n);
+        }
+        return out.toByteArray();
     }
 
     private static void assertTransformSucceeds(BaseTransformer transformer, CtClass cc) {
@@ -83,6 +100,61 @@ class BaseTransformerSmokeTest {
         CtClass cc = makeClass("oshi.software.os.linux.proc.CentralProcessor",
                 "public String getName() { return null; }");
         assertTransformSucceeds(new CentralProcessor(), cc);
+    }
+
+    @Test
+    void linuxCentralProcessorTupleReturnTypes() throws Exception {
+        // 6.x 各时代的 initProcessorCounts 返回类型：Pair（6.2.x）、Triplet（6.4.x）、Quartet（6.6.x），
+        // 注入体须按实际返回类型构造对应元组，setBody 编译通过即验证了构造器与返回类型匹配
+        String[] tupleTypes = {"oshi.util.tuples.Pair", "oshi.util.tuples.Triplet", "oshi.util.tuples.Quartet"};
+        for (String tupleType : tupleTypes) {
+            ClassPool pool = ClassPool.getDefault();
+            CtClass cc = pool.makeClass("oshi.hardware.platform.linux.LinuxCentralProcessor");
+            cc.addMethod(CtMethod.make("protected " + tupleType + " initProcessorCounts() { return null; }", cc));
+            try {
+                new CentralProcessor().transform(cc);
+                cc.toBytecode();
+            } catch (Throwable e) {
+                throw new AssertionError("transform 失败: " + tupleType, e);
+            } finally {
+                cc.detach();
+            }
+        }
+    }
+
+    @Test
+    void linuxCentralProcessorOshi5x() throws Exception {
+        // oshi 5.x（如 Minecraft 自带的 5.8.5）的 initProcessorCounts 直接返回 List<LogicalProcessor>。
+        // 回归：修复前误把 List 包成 Pair 返回，javassist 不校验返回类型，直到
+        // AbstractCentralProcessor 构造器遍历逻辑处理器时才抛出
+        // IncompatibleClassChangeError: Class oshi.util.tuples.Pair does not implement
+        // the requested interface java.util.Collection。
+        // 用真实 oshi 5.8.5 字节码端到端验证补丁后可正常构造。
+        byte[] original = readAllBytes(getClass()
+                .getResourceAsStream("/oshi/hardware/platform/linux/LinuxCentralProcessor.class"));
+        ClassPool pool = ClassPool.getDefault();
+        CtClass cc = pool.makeClass(new ByteArrayInputStream(original));
+        try {
+            try {
+                new CentralProcessor().transform(cc);
+            } catch (Throwable e) {
+                throw new AssertionError("transform 失败", e);
+            }
+            Class<?> clazz = cc.toClass();
+            Constructor<?> ctor = clazz.getDeclaredConstructor();
+            ctor.setAccessible(true);
+            Object processor = ctor.newInstance();
+            Method counts = clazz.getDeclaredMethod("initProcessorCounts");
+            counts.setAccessible(true);
+            Object result = counts.invoke(processor);
+            int expected = Runtime.getRuntime().availableProcessors();
+            assertTrue(result instanceof java.util.List,
+                    "initProcessorCounts 应返回 List，实际为 " + result.getClass());
+            assertEquals(expected, ((java.util.List<?>) result).size());
+            assertEquals(expected, ((Number) clazz.getMethod("getLogicalProcessorCount").invoke(processor)).intValue());
+        } finally {
+            cc.detach();
+        }
     }
 
     @Test
