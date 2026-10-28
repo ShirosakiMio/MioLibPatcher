@@ -2,6 +2,8 @@ package com.mio.libpatcher;
 
 import com.mio.libpatcher.transformer.*;
 import com.mio.libpatcher.transformer.oshi.CentralProcessor;
+import com.mio.libpatcher.transformer.oshi.LinuxLibcFunctionsTransformer;
+import com.mio.libpatcher.transformer.oshi.LinuxOperatingSystemFFMTransformer;
 import com.mio.libpatcher.transformer.oshi.ProcessorIdentifierTransformer;
 import com.mio.libpatcher.util.LogUtil;
 
@@ -58,6 +60,8 @@ public class MainAgent {
         transformers.add(new RandomPatchesTransformer());
         transformers.add(new ProcessorIdentifierTransformer());
         transformers.add(new CentralProcessor());
+        transformers.add(new LinuxLibcFunctionsTransformer());
+        transformers.add(new LinuxOperatingSystemFFMTransformer());
         transformers.add(new SodiumLikeModTransformer());
         transformers.add(new SQLTransformer());
         transformers.add(new FabricLoaderTransformer());
